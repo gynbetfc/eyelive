@@ -114,7 +114,16 @@ HTML_PAINEL = open('painel.html','r').read() if os.path.exists('painel.html') el
 
 @app.route('/')
 def painel():
-    return render_template_string(HTML_PAINEL)
+        # Tentar carregar painel.html local, senão baixar do GitHub
+    try:
+        with open('painel.html', 'r') as f:
+            html = f.read()
+    except:
+        try:
+            html = requests.get('https://raw.githubusercontent.com/gynbetfc/eyelive/main/painel.html').text
+        except:
+            html = '<h1>Erro ao carregar painel</h1>'
+    return render_template_string(html)
 
 @app.route('/painel_data')
 def painel_data():
@@ -158,7 +167,16 @@ def cmd():
 
 @app.route('/painel.html')
 def serve_painel():
-    return render_template_string(HTML_PAINEL)
+        # Tentar carregar painel.html local, senão baixar do GitHub
+    try:
+        with open('painel.html', 'r') as f:
+            html = f.read()
+    except:
+        try:
+            html = requests.get('https://raw.githubusercontent.com/gynbetfc/eyelive/main/painel.html').text
+        except:
+            html = '<h1>Erro ao carregar painel</h1>'
+    return render_template_string(html)
 
 if __name__ == '__main__':
     print(f"EYELIVE - {DEVICE_NAME}")
