@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EYELIVE</title>
+<style>
+body{background:#0a0a1a;color:#fff;font-family:monospace;padding:10px;margin:0}
+.card{background:#1a1a3e;border:1px solid #333;border-radius:12px;padding:15px;margin:10px 0}
+h1{color:#ffd700;text-align:center;font-size:1.2em}
+.green{color:#00ff88}.red{color:#ff4444}
+.data{color:#bbb;font-size:12px;line-height:1.6}
+.btn{background:#ffd700;color:#000;padding:8px 14px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;margin:3px;font-size:11px}
+</style></head>
+<body><h1>EYELIVE</h1><div id="d"></div>
+<script>
+function L(){fetch("/painel_data").then(r=>r.json()).then(d=>{var h="";d.forEach(function(x){h+='<div class=card><h3 class=green>ON - '+x.nome+'</h3><div class=data><p>Bateria: '+x.bateria+(x.carregando?' CARREGANDO':'')+' | '+x.ultimo_update+'</p><p>IP: '+x.ip+' | GPS: '+x.gps.lat+','+x.gps.lng+'</p></div></div>'});document.getElementById("d").innerHTML=h||"<p>Nenhum dispositivo</p>"})}setInterval(L,8000);L()
+</script></body></html>
