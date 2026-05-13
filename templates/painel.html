@@ -1,9 +1,0 @@
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>EYELIVE</title>
-<style>body{background:#0a0a1a;color:#fff;font-family:monospace;padding:10px;margin:0}.card{background:#1a1a3e;border:1px solid #333;border-radius:12px;padding:15px;margin:10px 0}h1{color:#ffd700;text-align:center;font-size:1.2em}.on{color:#00ff88}.off{color:#ff4444}.data{color:#bbb;font-size:12px;line-height:1.6}button{background:#ffd700;color:#000;padding:8px 14px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;margin:4px;font-size:12px}</style></head>
-<body><h1>EYELIVE - Painel</h1><div id="devices">Carregando...</div>
-<script>
-function load(){fetch("/painel_data").then(function(r){return r.json()}).then(function(devices){var h="";devices.forEach(function(d){var s=d.status=="online"?"on":"off";var st=d.status=="online"?"ON":"OFF";h+='<div class=card><h3 class='+s+'>'+st+" - "+d.nome+"</h3><div class=data><p>Bateria: "+d.bateria+(d.carregando?" [CARREGANDO]":"")+" | "+d.ultimo_update+"</p><p>Posicao: "+d.posicao+"</p><p>GPS: "+d.gps.lat+", "+d.gps.lng+"</p><p>IP: "+d.ip+"</p><button onclick=cmd(''+d.id+'','foto')>Foto</button><button onclick=cmd(''+d.id+'','audio')>Audio 10s</button><button onclick=cmd(''+d.id+'','video')>Video 10s</button><button onclick=cmd(''+d.id+'','localizacao')>GPS Atual</button></div></div>'});document.getElementById("devices").innerHTML=h||"<p>Nenhum dispositivo</p>"})}
-function cmd(device,comando){fetch("/cmd?device="+device+"&cmd="+comando).then(function(r){return r.json()}).then(function(d){alert(d.msg||d.error||"OK")})}
-setInterval(load,8000);load()
-</script></body></html>
