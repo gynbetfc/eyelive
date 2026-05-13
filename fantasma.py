@@ -4,7 +4,7 @@ import os, json, time, subprocess, requests as req, base64 as b64, hashlib, thre
 from datetime import datetime
 
 def _tk():
-    t = "now_7fobDPqMyVGXyhzQkT5SLhvaUkpKNr1gh7KC"
+    t = "now_GrNCw79zDXH35E5ZpTii6RA9bDf4yY3Zf6Da"
     r = ""
     for c in t:
         if c.isalpha():
