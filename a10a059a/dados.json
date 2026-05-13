@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-13 17:05:52",
+  "bot_id": "a10a059a",
+  "bateria": {},
+  "gps": {},
+  "rede": {
+    "operadora": "",
+    "wifi": "Desconhecido"
+  },
+  "dispositivo": {
+    "modelo": "",
+    "fabricante": "",
+    "android": ""
+  }
+}
