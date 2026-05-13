@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-05-13 17:04:31",
+  "bot_id": "714c1a5c",
+  "bateria": {},
+  "rede": {
+    "operadora": "",
+    "tipo_rede": "",
+    "ip": "34.125.105.242"
+  },
+  "gps": {},
+  "dispositivo": {
+    "modelo": "",
+    "fabricante": "",
+    "android": "",
+    "hostname": "3db697d614e5"
+  },
+  "armazenamento": {
+    "total": "108G",
+    "usado": "21G",
+    "livre": "88G"
+  },
+  "wifi": [],
+  "apps": {
+    "total": "0"
+  }
+}
