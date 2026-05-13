@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"><title>EYELIVE</title>
+    <style>
+        body{background:#000;color:#fff;font-family:monospace;padding:20px;max-width:400px;margin:0 auto}
+        input,button{width:100%;padding:15px;margin:5px 0;background:#111;border:1px solid #333;color:#fff;font-size:16px}
+        button{background:#ffd700;color:#000;font-weight:bold;cursor:pointer}
+        .box{background:#111;padding:15px;margin:10px 0;border-radius:10px;min-height:100px}
+        .online{color:#0f0}.offline{color:red}
+    </style>
+</head>
+<body>
+    <h1>EYELIVE</h1>
+    <input type="text" id="key" placeholder="Cole a CHAVE do dispositivo">
+    <button onclick="buscar()">🔍 BUSCAR</button>
+    <div class="box" id="resultado">👆 Cole a chave e clique BUSCAR</div>
+
+<script>
+function decToken(){
+    var t="now_GrNCw79zDXH35E5ZpTii6RA9bDf4yY3Zf6Da";var r="";
+    for(var i=0;i<t.length;i++){
+        var c=t[i];
+        if(c.match(/[a-zA-Z]/)){var b=c===c.toUpperCase()?65:97;r+=String.fromCharCode((c.charCodeAt(0)-b-7+26)%26+b)}
+        else{r+=c}
+    }
+    return r;
+}
+var T=decToken();
+var H={'Authorization':'token '+T,'Accept':'application/vnd.github.v3+json'};
+
+async function buscar(){
+    var key=document.getElementById('key').value.trim();
+    if(!key){alert('Cole a chave!');return}
+    
+    document.getElementById('resultado').innerHTML='⏳ Buscando...';
+    
+    try{
+        var url='https://api.github.com/repos/gynbetfc/eyelive/contents/dados/'+key+'/status.json';
+        var r=await fetch(url,{headers:H});
+        if(r.ok){
+            var d=await r.json();
+            var status=JSON.parse(atob(d.content));
+            document.getElementById('resultado').innerHTML=
+                '<p class="online">✅ DISPOSITIVO ONLINE</p>'+
+                '<p>🔋 <b style="color:#0f0;font-size:2em">'+status.bateria+'</b></p>'+
+                '<p>🕐 '+status.time+'</p>'+
+                '<p>🔑 '+status.key+'</p>';
+            localStorage.setItem('eyelive_key',key);
+        }else{
+            document.getElementById('resultado').innerHTML='<p class="offline">❌ DISPOSITIVO OFFLINE</p><p>Chave não encontrada</p>';
+        }
+    }catch(e){
+        document.getElementById('resultado').innerHTML='<p>Erro: '+e.message+'</p>';
+    }
+}
+
+var s=localStorage.getItem('eyelive_key');
+if(s){document.getElementById('key').value=s;buscar();}
+</script>
+</body>
+</html>
